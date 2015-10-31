@@ -1,3 +1,5 @@
+use std::env;
+
 #[derive(Debug)]
 struct Mailbox {
     storage: Vec<String>,
@@ -18,7 +20,15 @@ impl Mailbox {
 }
 
 fn main() {
-    println!("Hello, world!");
+    let maybe_mail = env::args().nth(1);
+
+    let mut mailbox = Mailbox::empty();
+
+    if let Some(mail) = maybe_mail {
+        mailbox.put_mail(mail);
+    }
+
+    println!("Mailbox: {:?}", mailbox);
 }
 
 #[test]
