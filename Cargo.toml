@@ -1,0 +1,4 @@
+[package]
+name = "codemotion-workshop"
+version = "0.1.0"
+authors = ["Florian Gilcher <florian.gilcher@asquera.de>"]
