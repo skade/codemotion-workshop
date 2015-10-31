@@ -1,4 +1,7 @@
-use std::env;
+use std::net::{TcpListener, TcpStream};
+use std::io::BufReader;
+use std::io::BufRead;
+use std::io::Write;
 
 #[derive(Debug)]
 struct Mailbox {
@@ -20,15 +23,30 @@ impl Mailbox {
 }
 
 fn main() {
-    let maybe_mail = env::args().nth(1);
+    let listener = TcpListener::bind("127.0.0.1:7200").unwrap();
 
     let mut mailbox = Mailbox::empty();
 
-    if let Some(mail) = maybe_mail {
-        mailbox.put_mail(mail);
+    for connection in listener.incoming() {
+        match connection {
+            Ok(mut stream) => {
+                let message = read_message(&mut stream);
+                mailbox.put_mail(message);
+                println!("Mailbox: {:?}", mailbox);
+            }
+            Err(e) => {
+                println!("Error connecting: {:?}", e);
+            }
+        }
     }
+}
 
-    println!("Mailbox: {:?}", mailbox);
+fn read_message(stream: &mut TcpStream) -> String {
+    let mut read_buffer = String::new();
+    let mut buffered_stream = BufReader::new(stream);
+    let res = buffered_stream.read_line(&mut read_buffer);
+    res.ok().expect("An error occured while reading!");
+    read_buffer
 }
 
 #[test]
