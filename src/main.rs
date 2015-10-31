@@ -1,3 +1,30 @@
+#[derive(Debug)]
+struct Mailbox {
+    storage: Vec<String>,
+}
+
+impl Mailbox {
+    fn empty() -> Mailbox {
+        Mailbox { storage:  vec![] }
+    }
+
+    fn get_mail(&mut self) -> Option<String> {
+        self.storage.pop()
+    }
+
+    fn put_mail(&mut self, message: String) {
+        self.storage.push(message);
+    }
+}
+
 fn main() {
     println!("Hello, world!");
+}
+
+#[test]
+fn test_mailbox() {
+    let mut mailbox = Mailbox::empty();
+    mailbox.put_mail(String::from("Hello!"));
+    let mail = mailbox.get_mail();
+    assert_eq!(Some(String::from("Hello!")), mail);
 }
