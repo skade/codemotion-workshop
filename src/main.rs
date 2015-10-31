@@ -30,15 +30,32 @@ fn main() {
     for connection in listener.incoming() {
         match connection {
             Ok(mut stream) => {
-                let message = read_message(&mut stream);
-                mailbox.put_mail(message);
-                println!("Mailbox: {:?}", mailbox);
+                handle(&mut mailbox, &mut stream)
             }
             Err(e) => {
                 println!("Error connecting: {:?}", e);
             }
         }
     }
+}
+
+fn handle(mailbox: &mut Mailbox, stream: &mut TcpStream) {
+    let message = read_message(stream);
+    match message.trim() {
+        "READ" => {
+            let maybe_mail = mailbox.get_mail();
+            if let Some(mail) = maybe_mail {
+                write!(stream, "{}", mail);
+            } else {
+                write!(stream, "Sorry, no new messages!");
+            }
+        }
+        _ => {
+            mailbox.put_mail(message);
+            println!("Mailbox contents: {:?}", mailbox);
+        }
+    }
+
 }
 
 fn read_message(stream: &mut TcpStream) -> String {
