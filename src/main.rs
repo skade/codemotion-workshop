@@ -2,35 +2,42 @@ use std::net::{TcpListener, TcpStream};
 use std::io::BufReader;
 use std::io::BufRead;
 use std::io::Write;
+use std::thread;
+use std::sync::{Arc,Mutex};
 
 #[derive(Debug)]
 struct Mailbox {
-    storage: Vec<String>,
+    storage: Mutex<Vec<String>>
 }
 
 impl Mailbox {
     fn empty() -> Mailbox {
-        Mailbox { storage:  vec![] }
+        Mailbox { storage: Mutex::new(vec![]) }
     }
 
-    fn get_mail(&mut self) -> Option<String> {
-        self.storage.pop()
+    fn get_mail(&self) -> Option<String> {
+        let mut vector = self.storage.lock().unwrap();
+        vector.pop()
     }
 
-    fn put_mail(&mut self, message: String) {
-        self.storage.push(message);
+    fn put_mail(&self, message: String) {
+        let mut vector = self.storage.lock().unwrap();
+        vector.push(message);
     }
 }
 
 fn main() {
     let listener = TcpListener::bind("127.0.0.1:7200").unwrap();
 
-    let mut mailbox = Mailbox::empty();
+    let shared_mailbox = Arc::new(Mailbox::empty());
 
     for connection in listener.incoming() {
         match connection {
             Ok(mut stream) => {
-                handle(&mut mailbox, &mut stream)
+                let mailbox = shared_mailbox.clone();
+                thread::spawn(move || {
+                    handle(&mailbox, &mut stream)
+                });
             }
             Err(e) => {
                 println!("Error connecting: {:?}", e);
@@ -39,7 +46,7 @@ fn main() {
     }
 }
 
-fn handle(mailbox: &mut Mailbox, stream: &mut TcpStream) {
+fn handle(mailbox: &Mailbox, stream: &mut TcpStream) {
     let message = read_message(stream);
     match message.trim() {
         "READ" => {
